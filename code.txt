@@ -1,0 +1,415 @@
+#include <Keypad.h>
+#include <LiquidCrystal.h>
+#include <SoftwareSerial.h>
+#include <stdlib.h>
+#include <String.h>
+#include <Servo.h>
+
+Servo servo;
+
+
+SoftwareSerial SMS(7, 8);
+
+char admin_phone_number[]={'+','9','2','0','0','0','0','0','0','0','0','0','0','\0'};
+char general_pin[]={'0','0','0','0','\0'};
+byte KeypadRow[]={13,12,11,10};// Keypad Rows connected to Arduino pins
+byte KaypadColumn[]={9,6,5,4};//Keypad Columns connected to Arduino pins
+
+const byte row = 4;
+const byte col = 4;
+
+
+int count_pin=0;
+char keyMap[row][col] =
+{
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+
+Keypad key = Keypad(makeKeymap(keyMap),KeypadRow,KaypadColumn,row,col);
+
+LiquidCrystal lcd(A5,A4,A3,A2,A1,A0); //tells with which pins LCD is Connected
+
+int phone(void);
+int pin(void);
+void admin(void);
+void user(void);
+bool verify(void);
+bool verify_pin(void);
+void servo_foo(void); 
+int random_number(void);
+void Message(int num);
+void Message_pin(void);
+
+
+void setup()
+{
+  
+  servo.attach(1);
+  lcd.begin(16, 2);
+  randomSeed(analogRead(0));
+  lcd.clear();
+  lcd.setCursor(5,0);
+  lcd.print("Welcome");
+  
+  SMS.begin(19200);   // the GPRS baud rate    
+  //Serial.begin(19200);
+    delay(20000);   
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Digital Security");
+  lcd.setCursor(5,1);
+  lcd.print("System");
+  delay(3000);
+  phone();
+  pin();  
+}
+
+void loop()
+{
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("1. Admin");
+  lcd.setCursor(0,1);
+  lcd.leftToRight();
+  lcd.print("2. Open Door");
+  delay(2000);
+  char digit_input='\0';
+  digit_input = key.waitForKey();
+  switch(digit_input)
+  {
+      case '1':
+        admin();
+        break;
+      case '2':
+        user();
+        break;
+  }
+}
+
+int phone(void)
+{
+  do
+  {
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print("Enter Mobile No#");
+     lcd.setCursor(0,1);
+     lcd.leftToRight();
+     lcd.print('0');
+     lcd.print('3');
+     admin_phone_number[0] = '+';
+     admin_phone_number[1] = '9';
+     admin_phone_number[2] = '2';
+     admin_phone_number[3] = '3';
+     int string_cnt=4;
+     admin_phone_number[string_cnt] = '\0';  
+     do
+     {
+      char digit_input='\0';
+      digit_input = key.waitForKey();
+      if(digit_input=='C')
+      {
+         break;
+      }
+      else if(digit_input=='A' && string_cnt==13)
+      {
+         return 0;
+      }
+      else if(digit_input!='A' && digit_input!='B' && digit_input!='D' && digit_input!='*' && digit_input!='#' && string_cnt<13)
+        {
+          lcd.print(digit_input);
+          admin_phone_number[string_cnt] = digit_input;
+          string_cnt++;
+          admin_phone_number[string_cnt] = '\0';
+        }
+      }while(true);
+  }while(true); 
+}
+
+int pin(void)
+{
+  do
+  {
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print("Enter PIN Code#");
+     lcd.setCursor(0,1);
+     lcd.leftToRight();
+     int string_cnt=0;
+     general_pin[string_cnt] = '\0';  
+     do
+     {
+      char digit_input='\0';
+      digit_input = key.waitForKey();
+      if(digit_input=='C')
+         break;
+      else if(digit_input=='A' && string_cnt==4)
+         return 0;
+      else if(digit_input!='A' && digit_input!='B' && digit_input!='D' && digit_input!='*' && digit_input!='#' && string_cnt<4)
+        {
+          lcd.print("*");
+          general_pin[string_cnt] = digit_input;
+          string_cnt++;
+          general_pin[string_cnt] = '\0';
+        }
+      }while(true);
+  }while(true);
+}
+
+void admin(void)
+{
+  if(verify()){
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("1. Change Phone");
+    lcd.setCursor(0,1);
+    lcd.leftToRight();
+    lcd.print("2. Change Pin");
+    delay(2000);
+    char digit_input='\0';
+    digit_input = key.waitForKey();
+    switch(digit_input)
+    {
+        case '1':
+          phone();
+          break;
+        case '2':
+          pin();
+          break;
+    }
+  }
+}
+
+
+
+
+
+
+void user(void)
+{
+  if(verify_pin()){
+    lcd.clear();
+   servo_foo();
+    char digit_input='\0';
+    //igit_input = key.waitForKey();
+    //switch(digit_input)
+   // {
+     //   case '1':
+       //   phone();
+         // break;
+        //case '2':
+         // pin();
+         // break;
+    //}
+  count_pin=0;   
+  }
+  else{
+    count_pin++;
+  
+
+  }
+
+ 
+
+  
+}
+
+
+void servo_foo(void){
+int i=0,j=10;
+   servo.write(90);
+   delay(100);
+   servo.write(0);
+  for(i=0;i<10;i++){
+  lcd.setCursor(0,0);
+    lcd.print(" Gate Open For");
+    lcd.setCursor(0,1);
+    lcd.leftToRight();
+    lcd.print(" Seconds : ");
+    lcd.print(j);
+    delay(1000);
+  j--;
+  }
+ servo.write(90);
+  
+}
+
+
+
+int random_number(void)
+{
+ // random number from 1111 to 9999
+  return random(1111,10000);
+}
+
+bool verify(void)
+{
+  int random_num = random_number();
+  Message(random_num);
+  char num[] = {'0','0','0','0','\0'};
+  do
+  {
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print("Enter Code : ");
+     lcd.setCursor(0,1);
+     lcd.leftToRight();
+     int string_cnt=0;
+     num[string_cnt] = '\0';  
+     do
+     {
+      char digit_input='\0';
+      digit_input = key.waitForKey();
+      if(digit_input=='C')
+         break;
+      else if(digit_input=='A' && string_cnt==4)
+          return atoi(num)==random_num;
+      else if(digit_input!='A' && digit_input!='B' && digit_input!='D' && digit_input!='*' && digit_input!='#' && string_cnt<4)
+        {
+          lcd.print(digit_input);
+          num[string_cnt] = digit_input;
+          string_cnt++;
+          num[string_cnt] = '\0';
+        }
+      }while(true);
+  }while(true);
+}
+
+bool verify_pin(void)
+{
+  //general_pin
+ // int random_num = random_number();
+ // Message(random_num);
+  
+  
+  if(count_pin==3){
+message_pin();
+  }
+  
+  char num[] = {'0','0','0','0','\0'};
+  do
+  {
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print("Enter PIN Code : ");
+     lcd.setCursor(0,1);
+     lcd.leftToRight();
+     int string_cnt=0;
+     num[string_cnt] = '\0';  
+     do
+     {
+      char digit_input='\0';
+      digit_input = key.waitForKey();
+      if(digit_input=='C')
+         break;
+      else if(digit_input=='A' && string_cnt==4){
+        int a=check_pin(num);
+        return a;
+      }
+          
+      else if(digit_input!='A' && digit_input!='B' && digit_input!='D' && digit_input!='*' && digit_input!='#' && string_cnt<4)
+        {
+          lcd.print(digit_input);
+          num[string_cnt] = digit_input;
+          string_cnt++;
+          num[string_cnt] = '\0';
+        }
+      }while(true);
+  }while(true);
+}
+
+bool check_pin(char num[]){
+int found=0,i=0;
+
+for(i=0;i<4;i++){
+if(num[i]==general_pin[i]){
+  found=1;
+}
+else {
+  found=0;
+}
+  
+}
+  return found;
+}
+
+
+
+
+
+
+void Message(int num)
+{
+    String first = "AT + CMGS=\"";
+    String last = "\"";
+    first+=admin_phone_number;
+    first+=last;
+    String msg = "Digital Security System Code : ";
+    String msg1=
+    msg+=num;
+    
+    SMS.print("AT+CMGF=1\r");    //Because we want to send the SMS in text mode
+    delay(100);
+     SMS.println(first); 
+   delay(100);
+  
+  // REPLACE WITH YOUR OWN SMS MESSAGE CONTENT
+  SMS.println(msg); 
+  delay(100);
+
+  // End AT command with a ^Z, ASCII code 26
+  SMS.println((char)26); 
+  delay(100);
+  SMS.println();
+  // Give module time to send SMS
+  delay(5000); 
+}
+void message_pin(void)
+{
+
+ int random_num = random_number();
+ // Message(random_num);
+ 
+  
+    String first = "AT + CMGS=\"";
+    String last = "\"";
+    first+=admin_phone_number;
+    first+=last;
+    String msg = "Digital Security PIN Code : ";
+    
+    msg+=random_num;
+    
+    SMS.print("AT+CMGF=1\r");    //Because we want to send the SMS in text mode
+     SMS.println("AT + CMGS =\"+923332337028\""); 
+  delay(100);
+     
+  // REPLACE WITH YOUR OWN SMS MESSAGE CONTENT
+  SMS.println(msg); 
+  delay(100);
+
+  // End AT command with a ^Z, ASCII code 26
+  SMS.println((char)26); 
+  delay(100);
+  SMS.println();
+  // Give module time to send SMS
+  delay(5000); 
+  copy_pin(random_num);
+  
+}
+void copy_pin(int num){
+int found=0,i=0,j=3;
+
+
+for( i=0;i<4;i++){
+  found=num%10;
+  num=num/10;
+  general_pin[j]=found;
+  j--;
+}
+
+
+  
+}
